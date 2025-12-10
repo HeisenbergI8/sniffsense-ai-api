@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import { env } from './env';
 
 export interface DBConfig {
   host: string;
@@ -7,14 +6,14 @@ export interface DBConfig {
   database: string;
   username: string;
   password: string;
-  dialect: "postgres";
+  dialect: 'postgres';
 }
 
 export const dbConfig: DBConfig = {
-  host: process.env.DB_HOST || "",
-  port: Number(process.env.DB_PORT || 5432),
-  database: process.env.DB_NAME || "",
-  username: process.env.DB_USER || "",
-  password: process.env.DB_PASS || "",
-  dialect: "postgres",
+  host: env.db.host,
+  port: env.db.port,
+  database: env.db.name,
+  username: env.db.user,
+  password: env.db.pass,
+  dialect: 'postgres',
 };
