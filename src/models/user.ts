@@ -1,5 +1,5 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../database/sequelize';
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../database/sequelize";
 
 class User extends Model {
   public id!: number;
@@ -17,6 +17,7 @@ User.init(
     username: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     password: {
       type: DataTypes.STRING,
@@ -25,7 +26,7 @@ User.init(
   },
   {
     sequelize,
-    tableName: 'users',
+    tableName: "users",
   }
 );
 
