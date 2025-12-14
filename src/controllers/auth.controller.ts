@@ -1,9 +1,14 @@
 import { Request, Response } from "express";
-import { createUser as CreateUser } from "../services/auth.service";
+import { signup as SignUp, login as Login } from "../services/auth.service";
 
 export async function signUp(req: Request, res: Response) {
-  const result = await CreateUser(req.body.username, req.body.password);
+  const result = await SignUp(req.body.username, req.body.password);
   return res.status(result.status).json(result.data);
 }
 
-export default { signUp };
+export async function login(req: Request, res: Response) {
+  const result = await Login(req.body.username, req.body.password);
+  return res.status(result.status).json(result.data);
+}
+
+export default { signUp, login };
