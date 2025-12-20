@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import sequelize from "./database/sequelize";
 import app from "./app";
+import { initModels } from "./models";
 
 dotenv.config();
 
@@ -9,7 +10,9 @@ async function startServer() {
     await sequelize.authenticate();
     console.log("Database connected successfully");
 
-    await sequelize.sync({ alter: true });
+    initModels();
+
+    await sequelize.sync();
     console.log("All models synced successfully");
 
     const PORT = Number(process.env.PORT || 3000);

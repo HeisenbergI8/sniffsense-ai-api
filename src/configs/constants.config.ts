@@ -1,6 +1,7 @@
 export const STATUS = {
   SUCCESS: 200,
   CREATED: 201,
+  NO_CONTENT: 204,
   BAD_REQUEST: 400,
   CONFLICT: 409,
   SERVER_ERROR: 500,
@@ -10,6 +11,9 @@ export const STATUS = {
 
 export const SUCCESS_MESSAGE = {
   CREATE_USER: "User created successfully",
+  CREATE_PERFUME: "Perfume created successfully",
+  UPDATE_PERFUME: "Perfume updated successfully",
+  DELETE_PERFUME: "Perfume deleted successfully",
 };
 
 export const ERROR_MESSAGE = {
@@ -18,6 +22,8 @@ export const ERROR_MESSAGE = {
   VALIDATION_ERROR: "Validation error",
   USER_NOT_FOUND: "User not found",
   UNAUTHORIZED: "Unauthorized access",
+  PERFUME_NOT_FOUND: "Perfume not found",
+  PERFUME_EXISTS: "Perfume with brand and name already exists",
 };
 
 export const TOKEN_CONSTANTS = {
