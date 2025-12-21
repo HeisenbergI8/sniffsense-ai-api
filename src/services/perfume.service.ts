@@ -8,8 +8,6 @@ import {
 } from "../configs/constants.config";
 import { PerfumePayload, PerfumeUpdatePayload } from "../types/perfume.types";
 
-// types moved to src/types/perfume.types.ts
-
 export async function createPerfume(userId: number, payload: PerfumePayload) {
   try {
     logger.info("Creating perfume", {

@@ -30,3 +30,8 @@ export const TOKEN_CONSTANTS = {
   SECRET_KEY: process.env.JWT_SECRET,
   EXPIRATION_TIME: "1h",
 };
+
+// Domain-specific constants
+export const USAGE_CONSTANTS = {
+  ESTIMATE_ML_PER_SPRAY: 0.1,
+};

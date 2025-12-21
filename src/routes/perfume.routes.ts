@@ -1,16 +1,18 @@
 import { Router } from "express";
 import {
-  create,
-  update,
-  list,
-  getById,
-  remove,
+  createPerfume,
+  updatePerfume,
+  getPerfumes,
+  getPerfumeById,
+  deletePerfume,
 } from "../controllers/perfume.controller";
+import { recordUsage } from "../controllers/usage.controller";
 import { validateBody } from "../middlewares/validation.middleware";
 import {
   createPerfumeSchema,
   updatePerfumeSchema,
 } from "../validators/perfume.validator";
+import { createUsageSchema } from "../validators/usage.validator";
 import { authenticate } from "../middlewares/auth.middleware";
 const router = Router();
 
@@ -18,10 +20,13 @@ const router = Router();
 router.use(authenticate);
 
 router
-  .post("/", validateBody(createPerfumeSchema), create)
-  .get("/", list)
-  .get("/:id", getById)
-  .put("/:id", validateBody(updatePerfumeSchema), update)
-  .delete("/:id", remove);
+  .post("/", validateBody(createPerfumeSchema), createPerfume)
+  .get("/", getPerfumes)
+  .get("/:id", getPerfumeById)
+  .put("/:id", validateBody(updatePerfumeSchema), updatePerfume)
+  .delete("/:id", deletePerfume);
+
+// Usage recording endpoint
+router.post("/:id/usage", validateBody(createUsageSchema), recordUsage);
 
 export default router;

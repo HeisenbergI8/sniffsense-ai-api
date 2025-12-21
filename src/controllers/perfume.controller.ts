@@ -1,10 +1,10 @@
 import { Response } from "express";
 import {
-  createPerfume,
-  updatePerfume,
-  getPerfumes,
-  getPerfumeById,
-  deletePerfume,
+  createPerfume as CreatePerfume,
+  updatePerfume as UpdatePerfume,
+  getPerfumes as GetPerfumes,
+  getPerfumeById as GetPerfumeById,
+  deletePerfume as DeletePerfume,
 } from "../services/perfume.service";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { STATUS, ERROR_MESSAGE } from "../configs/constants.config";
@@ -13,16 +13,16 @@ import type {
   PerfumeUpdatePayload,
 } from "../types/perfume.types";
 
-export async function create(req: AuthenticatedRequest, res: Response) {
+export async function createPerfume(req: AuthenticatedRequest, res: Response) {
   const userId = req.user!.id;
-  const result = await createPerfume(userId, req.body as PerfumePayload);
+  const result = await CreatePerfume(userId, req.body as PerfumePayload);
   return res.status(result.status).json(result.data);
 }
 
-export async function update(req: AuthenticatedRequest, res: Response) {
+export async function updatePerfume(req: AuthenticatedRequest, res: Response) {
   const userId = req.user!.id;
   const perfumeId = Number(req.params.id);
-  const result = await updatePerfume(
+  const result = await UpdatePerfume(
     userId,
     perfumeId,
     req.body as PerfumeUpdatePayload
@@ -30,7 +30,7 @@ export async function update(req: AuthenticatedRequest, res: Response) {
   return res.status(result.status).json(result.data);
 }
 
-export async function list(req: AuthenticatedRequest, res: Response) {
+export async function getPerfumes(req: AuthenticatedRequest, res: Response) {
   const userId = req.user!.id;
   const pageRaw = req.query.page ? Number(req.query.page) : 1;
   const limitRaw = req.query.limit ? Number(req.query.limit) : 10;
@@ -55,25 +55,31 @@ export async function list(req: AuthenticatedRequest, res: Response) {
       .json({ message: ERROR_MESSAGE.VALIDATION_ERROR });
   }
 
-  const result = await getPerfumes(userId, page, limit, sortBy, sortOrder);
+  const result = await GetPerfumes(userId, page, limit, sortBy, sortOrder);
   return res.status(result.status).json(result.data);
 }
 
-export async function getById(req: AuthenticatedRequest, res: Response) {
+export async function getPerfumeById(req: AuthenticatedRequest, res: Response) {
   const userId = req.user!.id;
   const perfumeId = Number(req.params.id);
-  const result = await getPerfumeById(userId, perfumeId);
+  const result = await GetPerfumeById(userId, perfumeId);
   return res.status(result.status).json(result.data);
 }
 
-export async function remove(req: AuthenticatedRequest, res: Response) {
+export async function deletePerfume(req: AuthenticatedRequest, res: Response) {
   const userId = req.user!.id;
   const perfumeId = Number(req.params.id);
-  const result = await deletePerfume(userId, perfumeId);
+  const result = await DeletePerfume(userId, perfumeId);
   if (result.status === STATUS.NO_CONTENT) {
     return res.status(STATUS.NO_CONTENT).send();
   }
   return res.status(result.status).json(result.data);
 }
 
-export default { create, update, list, getById, remove };
+export default {
+  createPerfume,
+  updatePerfume,
+  getPerfumes,
+  getPerfumeById,
+  deletePerfume,
+};
