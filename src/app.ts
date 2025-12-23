@@ -2,6 +2,7 @@ import express from "express";
 import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/global-error.middleware";
 import perfumeRouter from "./routes/perfume.routes";
+import usageRouter from "./routes/usage.routes";
 
 // Initialize Express app
 const app = express();
@@ -17,6 +18,7 @@ app.get("/health", (_req, res) => {
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/perfumes", perfumeRouter);
+app.use("/api", usageRouter);
 
 app.use(errorHandler);
 

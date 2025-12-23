@@ -8,6 +8,7 @@ import {
   USAGE_CONSTANTS,
 } from "../configs/constants.config";
 import { UsagePayload } from "../types/usage.types";
+import { normalizePageLimit } from "../utils/query.util";
 
 export async function recordUsage(
   userId: number,
@@ -73,6 +74,89 @@ export async function recordUsage(
     });
   } catch (err) {
     logger.error("Failed to record usage", {
+      error: (err as any)?.message,
+      userId,
+      perfumeId,
+    });
+    return {
+      status: STATUS.SERVER_ERROR,
+      data: { message: ERROR_MESSAGE.SERVER_ERROR },
+    };
+  }
+}
+
+export async function getUsages(
+  userId: number,
+  pageRaw?: unknown,
+  limitRaw?: unknown
+) {
+  try {
+    const { page, limit } = normalizePageLimit(pageRaw, limitRaw, {
+      page: 1,
+      limit: 10,
+      maxLimit: 100,
+    });
+    const offset = (page - 1) * limit;
+
+    const { rows, count } = await Usage.findAndCountAll({
+      where: { userId },
+      order: [["usedAt", "DESC"]],
+      offset,
+      limit,
+    });
+
+    return {
+      status: STATUS.SUCCESS,
+      data: { items: rows, total: count, page, limit },
+    };
+  } catch (err) {
+    logger.error("Failed to fetch usages", {
+      error: (err as any)?.message,
+      userId,
+    });
+    return {
+      status: STATUS.SERVER_ERROR,
+      data: { message: ERROR_MESSAGE.SERVER_ERROR },
+    };
+  }
+}
+
+export async function getPerfumeUsages(
+  userId: number,
+  perfumeId: number,
+  pageRaw?: unknown,
+  limitRaw?: unknown
+) {
+  try {
+    const perfume = await Perfume.findOne({ where: { id: perfumeId, userId } });
+    if (!perfume) {
+      logger.warn("Perfume not found for usage history", { userId, perfumeId });
+      return {
+        status: STATUS.NOT_FOUND,
+        data: { message: ERROR_MESSAGE.PERFUME_NOT_FOUND },
+      };
+    }
+
+    const { page, limit } = normalizePageLimit(pageRaw, limitRaw, {
+      page: 1,
+      limit: 10,
+      maxLimit: 100,
+    });
+    const offset = (page - 1) * limit;
+
+    const { rows, count } = await Usage.findAndCountAll({
+      where: { userId, perfumeId },
+      order: [["usedAt", "DESC"]],
+      offset,
+      limit,
+    });
+
+    return {
+      status: STATUS.SUCCESS,
+      data: { items: rows, total: count, page, limit, perfume },
+    };
+  } catch (err) {
+    logger.error("Failed to fetch perfume usages", {
       error: (err as any)?.message,
       userId,
       perfumeId,

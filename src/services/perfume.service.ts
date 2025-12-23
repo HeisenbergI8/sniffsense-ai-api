@@ -7,6 +7,13 @@ import {
   ERROR_MESSAGE,
 } from "../configs/constants.config";
 import { PerfumePayload, PerfumeUpdatePayload } from "../types/perfume.types";
+import { normalizePageLimit, normalizeSort } from "../utils/query.util";
+import {
+  geocodeCity,
+  getCurrentTempC,
+  mapToWeatherTags,
+} from "../utils/weather.util";
+import { Op, literal } from "sequelize";
 
 export async function createPerfume(userId: number, payload: PerfumePayload) {
   try {
@@ -100,15 +107,25 @@ export async function updatePerfume(
 
 export async function getPerfumes(
   userId: number,
-  page = 1,
-  limit = 10,
-  sortBy: "lastUsedAt" | "usageCount" = "lastUsedAt",
-  sortOrder: "ASC" | "DESC" = "DESC"
+  pageRaw?: unknown,
+  limitRaw?: unknown,
+  sortByRaw?: unknown,
+  sortOrderRaw?: unknown
 ) {
   try {
-    // defensive: service assumes sanitized inputs
-    const safeLimit = Math.min(Math.max(limit, 1), 100);
-    const offset = (page - 1) * safeLimit;
+    const { page, limit } = normalizePageLimit(pageRaw, limitRaw, {
+      page: 1,
+      limit: 10,
+      maxLimit: 100,
+    });
+    const { sortBy, sortOrder } = normalizeSort(
+      sortByRaw,
+      sortOrderRaw,
+      ["lastUsedAt", "usageCount"] as const,
+      { sortBy: "lastUsedAt", sortOrder: "DESC" }
+    );
+
+    const offset = (page - 1) * limit;
     logger.info("Fetching perfumes", {
       userId,
       page,
@@ -121,7 +138,7 @@ export async function getPerfumes(
       where: { userId }, // leverages composite indexes (userId + sort)
       order: [[sortBy, sortOrder]],
       offset,
-      limit: safeLimit,
+      limit,
     });
 
     return {
@@ -130,7 +147,7 @@ export async function getPerfumes(
         items: rows,
         total: count,
         page,
-        limit: safeLimit,
+        limit,
       },
     };
   } catch (err) {
@@ -147,6 +164,13 @@ export async function getPerfumes(
 
 export async function getPerfumeById(userId: number, perfumeId: number) {
   try {
+    if (!Number.isFinite(perfumeId) || perfumeId <= 0) {
+      logger.warn("Invalid perfume id", { userId, perfumeId });
+      return {
+        status: STATUS.BAD_REQUEST,
+        data: { message: ERROR_MESSAGE.VALIDATION_ERROR },
+      };
+    }
     const perfume = await Perfume.findOne({ where: { id: perfumeId, userId } });
     if (!perfume) {
       logger.warn("Perfume not found by id", { userId, perfumeId });
@@ -186,6 +210,140 @@ export async function deletePerfume(userId: number, perfumeId: number) {
       error: (err as any)?.message,
       userId,
       perfumeId,
+    });
+    return {
+      status: STATUS.SERVER_ERROR,
+      data: { message: ERROR_MESSAGE.SERVER_ERROR },
+    };
+  }
+}
+
+export async function recommendPerfume(
+  userId: number,
+  options: {
+    occasion?: string; // "casual" | "work" | "formal" | "versatile"
+    city?: string;
+    state?: string;
+    country?: string;
+  }
+) {
+  try {
+    // Occasion default
+    const occasion = (options.occasion ?? "casual").toLowerCase();
+
+    // Determine weather tag using OpenWeather if city provided; else no weather filter
+    let weatherTag: "hot" | "cold" | "all_season" | undefined;
+    let weatherDetails: {
+      city: string;
+      lat: number;
+      lon: number;
+      tempC: number;
+      tag: typeof weatherTag;
+    } | null = null;
+    if (options.city) {
+      try {
+        const { lat, lon } = await geocodeCity(
+          options.city,
+          options.state,
+          options.country
+        );
+        const tempC = await getCurrentTempC(lat, lon);
+        const tags = mapToWeatherTags(tempC);
+        weatherTag = tags.primary;
+        weatherDetails = {
+          city: options.city,
+          lat,
+          lon,
+          tempC,
+          tag: weatherTag,
+        };
+      } catch (e) {
+        logger.warn(
+          "Weather lookup failed, proceeding without weather filter",
+          {
+            userId,
+            city: options.city,
+            state: options.state,
+            country: options.country,
+            error: (e as any)?.message,
+          }
+        );
+      }
+    }
+
+    // Build filters: occasionTags contains occasion OR versatile; weatherTags contains weatherTag OR all_season
+    const where: any = { userId };
+    const tagContains = (tag: string) => ({ [Op.contains]: [tag] });
+
+    // Occasion filter
+    where[Op.and] = [
+      {
+        [Op.or]: [
+          { occasionTags: tagContains(occasion) },
+          { occasionTags: tagContains("versatile") },
+        ],
+      },
+    ];
+
+    // Weather filter (optional)
+    if (weatherTag) {
+      where[Op.and].push({
+        [Op.or]: [
+          { weatherTags: tagContains(weatherTag) },
+          { weatherTags: tagContains("all_season") },
+        ],
+      });
+    }
+
+    // Ranking: exact matches first (occasion, weather), then usage-based rotation
+    const esc = (s: string) => s.replace(/'/g, "''");
+    const occasionCase = literal(
+      `CASE WHEN "occasionTags"::text[] @> ARRAY['${esc(occasion)}'] THEN 0 ` +
+        `WHEN "occasionTags"::text[] @> ARRAY['versatile'] THEN 1 ELSE 2 END`
+    );
+
+    // If no weatherTag calculated, keep neutral weight (1) to avoid influencing order
+    const weatherCase = weatherTag
+      ? literal(
+          `CASE WHEN "weatherTags"::text[] @> ARRAY['${esc(weatherTag)}'] THEN 0 ` +
+            `WHEN "weatherTags"::text[] @> ARRAY['all_season'] THEN 1 ELSE 2 END`
+        )
+      : literal("1");
+
+    const order = [
+      [occasionCase, "ASC"],
+      [weatherCase, "ASC"],
+      ["usageCount", "ASC"],
+      [literal('"lastUsedAt" ASC NULLS FIRST')],
+    ] as any;
+
+    // Fetch matching perfumes; fallback to all user's perfumes if none match
+    const candidates = await Perfume.findAll({ where, order, limit: 10 });
+    let items = candidates;
+    if (!items.length) {
+      items = await Perfume.findAll({ where: { userId }, order, limit: 10 });
+    }
+
+    // Pick top recommendation and exclude it from alternatives
+    const recommendation = items[0] ?? null;
+    const alternatives = recommendation
+      ? items.filter((p) => p.id !== (recommendation as any).id)
+      : items;
+
+    return {
+      status: STATUS.SUCCESS,
+      data: {
+        recommendation,
+        alternatives,
+        filters: { occasion, weatherTag },
+        weather: weatherDetails,
+      },
+    };
+  } catch (err) {
+    logger.error("Failed to recommend perfume", {
+      error: (err as any)?.message,
+      userId,
+      options,
     });
     return {
       status: STATUS.SERVER_ERROR,

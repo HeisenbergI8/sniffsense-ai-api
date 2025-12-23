@@ -45,12 +45,15 @@ Usage.init(
     tableName: "usages",
     indexes: [
       {
+        name: "idx_usages_user_usedat",
         fields: ["userId", "usedAt"], // fast per-user recent usages
       },
       {
-        fields: ["userId", "perfumeId"], // fast lookup of usages by user+perfume
+        name: "idx_usages_user_perfume_usedat",
+        fields: ["userId", "perfumeId", "usedAt"], // per-perfume history ordered
       },
       {
+        name: "idx_usages_perfumeId",
         fields: ["perfumeId"], // queries/filtering by perfume
       },
     ],
