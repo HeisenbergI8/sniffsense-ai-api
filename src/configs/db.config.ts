@@ -1,4 +1,4 @@
-import { env } from './env';
+import { env } from "./env.config";
 
 export interface DBConfig {
   host: string;
@@ -6,7 +6,7 @@ export interface DBConfig {
   database: string;
   username: string;
   password: string;
-  dialect: 'postgres';
+  dialect: "postgres";
 }
 
 export const dbConfig: DBConfig = {
@@ -15,5 +15,5 @@ export const dbConfig: DBConfig = {
   database: env.db.name,
   username: env.db.user,
   password: env.db.pass,
-  dialect: 'postgres',
+  dialect: "postgres",
 };
