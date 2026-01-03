@@ -17,6 +17,8 @@ class Perfume extends Model {
 
   public usageCount!: number;
   public lastUsedAt!: Date | null;
+
+  public imageUrl!: string | null;
 }
 
 Perfume.init(
@@ -67,6 +69,11 @@ Perfume.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
+
+    imageUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   },
   {
     sequelize,
@@ -80,7 +87,7 @@ Perfume.init(
       },
       {
         unique: true,
-        fields: ["userId", "brand", "name"], // ✅ per-user uniqueness
+        fields: ["userId", "brand", "name"], // per-user uniqueness
       },
       {
         fields: ["weatherTags"],

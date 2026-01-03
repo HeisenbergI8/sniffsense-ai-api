@@ -15,6 +15,7 @@ export const createPerfumeSchema = Joi.object({
     .required(),
   mlRemaining: Joi.number().integer().min(0).required(),
   lastUsedAt: Joi.date().optional().allow(null),
+  imageUrl: Joi.string().optional().allow(null),
 });
 
 export const updatePerfumeSchema = Joi.object({
@@ -30,4 +31,5 @@ export const updatePerfumeSchema = Joi.object({
     .optional(),
   mlRemaining: Joi.number().integer().min(0).optional(),
   lastUsedAt: Joi.date().optional().allow(null),
+  imageUrl: Joi.string().optional().allow(null),
 }).min(1);

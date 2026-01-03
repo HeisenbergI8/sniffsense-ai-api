@@ -5,6 +5,7 @@ export type PerfumePayload = {
   occasionTags: string[];
   mlRemaining: number;
   lastUsedAt?: Date | null;
+  imageUrl?: string | null;
 };
 
 export type PerfumeUpdatePayload = Partial<PerfumePayload>;

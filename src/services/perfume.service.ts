@@ -30,6 +30,7 @@ export async function createPerfume(userId: number, payload: PerfumePayload) {
       occasionTags: payload.occasionTags,
       mlRemaining: payload.mlRemaining,
       lastUsedAt: payload.lastUsedAt ?? null,
+      imageUrl: payload.imageUrl ?? null,
     });
 
     logger.info("Perfume created", { id: created.id, userId });
