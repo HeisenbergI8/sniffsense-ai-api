@@ -15,4 +15,16 @@ export const env = {
     user: process.env.DB_USER || "",
     pass: process.env.DB_PASS || "",
   },
+  cors: {
+
+    origins: (
+      process.env.CORS_ORIGINS ||
+      process.env.FRONTEND_ORIGIN ||
+      (process.env.FRONTEND_PORT ? `http://localhost:${process.env.FRONTEND_PORT}` : "http://localhost:5173")
+    )
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
+    credentials: String(process.env.CORS_CREDENTIALS).toLowerCase() === "true",
+  },
 } as const;

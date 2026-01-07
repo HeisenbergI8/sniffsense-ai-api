@@ -23,6 +23,11 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    confirmPassword: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "confirm_password",
+    },
   },
   {
     sequelize,

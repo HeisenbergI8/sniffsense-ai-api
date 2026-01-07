@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import { signup as SignUp, login as Login } from "../services/auth.service";
 
 export async function signUp(req: Request, res: Response) {
-  const result = await SignUp(req.body.username, req.body.password);
+  const result = await SignUp(
+    req.body.username,
+    req.body.password,
+    req.body.confirmPassword
+  );
   return res.status(result.status).json(result.data);
 }
 

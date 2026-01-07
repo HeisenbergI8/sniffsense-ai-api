@@ -24,6 +24,7 @@ export const ERROR_MESSAGE = {
   UNAUTHORIZED: "Unauthorized access",
   PERFUME_NOT_FOUND: "Perfume not found",
   PERFUME_EXISTS: "Perfume with brand and name already exists",
+  PASSWORD_MISMATCH: "Password and confirm password do not match",
 };
 
 export const TOKEN_CONSTANTS = {

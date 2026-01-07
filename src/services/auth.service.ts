@@ -9,12 +9,29 @@ import logger from "../utils/logger.util";
 import { UniqueConstraintError } from "sequelize";
 import { generateToken } from "../utils/token.util";
 
-export async function signup(username: string, password: string) {
+export async function signup(
+  username: string,
+  password: string,
+  confirmPassword: string
+) {
   try {
     logger.info(`Creating user ${JSON.stringify({ username })}`);
 
-    const hashed = await bcrypt.hash(password, 10);
-    const created = await User.create({ username, password: hashed });
+    if (password !== confirmPassword) {
+      return {
+        status: STATUS.BAD_REQUEST,
+        data: { message: ERROR_MESSAGE.PASSWORD_MISMATCH },
+      };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedConfirmPassword = await bcrypt.hash(confirmPassword, 10);
+
+    const created = await User.create({
+      username,
+      password: hashedPassword,
+      confirmPassword: hashedConfirmPassword,
+    });
 
     logger.info("User created successfully", { id: created.id, username });
     return {
