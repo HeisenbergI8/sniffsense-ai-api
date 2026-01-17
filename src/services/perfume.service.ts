@@ -223,6 +223,10 @@ export async function recommendPerfume(
   userId: number,
   options: {
     occasion?: string; // "casual" | "work" | "formal" | "versatile"
+    // Map-based location (preferred)
+    lat?: number;
+    lon?: number;
+    // Text-based location (fallback)
     city?: string;
     state?: string;
     country?: string;
@@ -232,16 +236,42 @@ export async function recommendPerfume(
     // Occasion default
     const occasion = (options.occasion ?? "casual").toLowerCase();
 
-    // Determine weather tag using OpenWeather if city provided; else no weather filter
+    // Determine weather tag using OpenWeather if location provided
     let weatherTag: "hot" | "cold" | "all_season" | undefined;
     let weatherDetails: {
-      city: string;
+      city?: string;
       lat: number;
       lon: number;
       tempC: number;
       tag: typeof weatherTag;
     } | null = null;
-    if (options.city) {
+
+    // Priority 1: Use coordinates from map if provided
+    if (options.lat !== undefined && options.lon !== undefined) {
+      try {
+        const tempC = await getCurrentTempC(options.lat, options.lon);
+        const tags = mapToWeatherTags(tempC);
+        weatherTag = tags.primary;
+        weatherDetails = {
+          lat: options.lat,
+          lon: options.lon,
+          tempC,
+          tag: weatherTag,
+        };
+      } catch (e) {
+        logger.warn(
+          "Weather lookup failed with coordinates, proceeding without weather filter",
+          {
+            userId,
+            lat: options.lat,
+            lon: options.lon,
+            error: (e as any)?.message,
+          }
+        );
+      }
+    }
+    // Priority 2: Fall back to city-based geocoding if coordinates not provided
+    else if (options.city) {
       try {
         const { lat, lon } = await geocodeCity(
           options.city,
@@ -260,7 +290,7 @@ export async function recommendPerfume(
         };
       } catch (e) {
         logger.warn(
-          "Weather lookup failed, proceeding without weather filter",
+          "Weather lookup failed with city, proceeding without weather filter",
           {
             userId,
             city: options.city,

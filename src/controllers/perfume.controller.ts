@@ -65,9 +65,18 @@ export async function recommendPerfume(
   res: Response
 ) {
   const userId = req.user!.id;
+
+  // Parse latitude and longitude from query params
+  const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
+  const lon = req.query.lon ? parseFloat(req.query.lon as string) : undefined;
+
   const result = await RecommendPerfume(userId, {
     occasion:
       typeof req.query.occasion === "string" ? req.query.occasion : undefined,
+    // Map-based location (preferred)
+    lat: lat && !isNaN(lat) ? lat : undefined,
+    lon: lon && !isNaN(lon) ? lon : undefined,
+    // Text-based location (fallback)
     city: typeof req.query.city === "string" ? req.query.city : undefined,
     state: typeof req.query.state === "string" ? req.query.state : undefined,
     country:
