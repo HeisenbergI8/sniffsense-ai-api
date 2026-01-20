@@ -9,6 +9,7 @@ export const env = {
     openWeatherApiKey: process.env.OPENWEATHER_API_KEY || "",
   },
   db: {
+    url: process.env.DATABASE_URL || "",
     host: process.env.DB_HOST || "",
     port: Number(process.env.DB_PORT || 5432),
     name: process.env.DB_NAME || "",
@@ -16,11 +17,12 @@ export const env = {
     pass: process.env.DB_PASS || "",
   },
   cors: {
-
     origins: (
       process.env.CORS_ORIGINS ||
       process.env.FRONTEND_ORIGIN ||
-      (process.env.FRONTEND_PORT ? `http://localhost:${process.env.FRONTEND_PORT}` : "http://localhost:5173")
+      (process.env.FRONTEND_PORT
+        ? `http://localhost:${process.env.FRONTEND_PORT}`
+        : "http://localhost:5173")
     )
       .split(",")
       .map((o) => o.trim())
